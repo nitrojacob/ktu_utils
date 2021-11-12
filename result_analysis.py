@@ -84,7 +84,7 @@ class KTU2019Result(object):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Do result analysis on file obtained from KTU login")
     parser.add_argument("xls", help=".xls file containing grades; downloaded from KTU site")
-    parser.add_argument("-c", "--codes", default="", help="the comma separated list of subject codes you want at output. Omitting this argument will print only subjects where there are atleast 1 student have pass/fail grade")
+    parser.add_argument("-c", "--codes", default=None, help="the comma separated list of subject codes you want at output. Omitting this argument will print only subjects where there are atleast 1 student have pass/fail grade")
     args = parser.parse_args()
 
     result = KTU2019Result(args.xls)
