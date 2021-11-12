@@ -78,8 +78,27 @@ class KTU2019Result(object):
         for i in range(5):
             ktuid,name = self.cgpa.loc[i,'Student'].split('-')
             print(sfmt.format(name, self.cgpa.loc[i,'Score']))
+            
+        print()
+        print('SGPA Analysis')
+        print(sfmt.format('SGPA Range', '#students'))
+        print(sfmt.format('SGPA==10', result.sgpa[result.sgpa.Score == 10].shape[0]))
+        gpa_bucket = [10, 9, 8, 7, 6, 5, 4, 0]
+        for i in range(len(gpa_bucket)-1):
+            ub = gpa_bucket[i]    #upper bound
+            lb = gpa_bucket[i+1] #lower bound
+            print(sfmt.format('SGPA <'+ str(ub)+' & >=' + str(lb), result.sgpa[(result.sgpa.Score < ub) & (result.sgpa.Score >= lb)].shape[0]))
         
-    
+        print()
+        print('CGPA Analysis')
+        print(sfmt.format('CGPA Range', '#students'))
+        print(sfmt.format('CGPA==10', result.cgpa[result.cgpa.Score == 10].shape[0]))
+        gpa_bucket = [10, 9, 8, 7, 6, 5, 4, 0]
+        for i in range(len(gpa_bucket)-1):
+            ub = gpa_bucket[i]    #upper bound
+            lb = gpa_bucket[i+1] #lower bound
+            print(sfmt.format('CGPA <'+ str(ub)+' & >=' + str(lb), result.cgpa[(result.cgpa.Score < ub) & (result.cgpa.Score >= lb)].shape[0]))
+        
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Do result analysis on file obtained from KTU login")
