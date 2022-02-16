@@ -17,12 +17,17 @@ import pandas as pd
 import argparse
 
 class KTU2019Result(object):
-    def __init__(self, xls):
+    def __init__(self, xls, scheme=2019):
         self.df = pd.read_excel(args.xls, header=1)
-        self.fail_tags = ['F', 'FA', 'FS', 'I', 'AB', 'W/D']
-        self.pass_tags = ['S', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'P']
+        if scheme == '2015':
+        	self.fail_tags = ['F', 'FE', 'I', 'AB', 'W/D']
+        	self.pass_tags = ['O', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'P']
+        else: #2019 Scheme
+        	self.fail_tags = ['F', 'FA', 'FS', 'I', 'AB', 'W/D']
+        	self.pass_tags = ['S', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'P']
         self.ofmt="{0:<10}{1:>10}{2:>10}{3:>10}"
         self.fail_count = {} #Subject wise fail counts
+        self.pass_count = {} #Subject wise pass counts
         self.cols = self.df.columns
         self.allpass_count = 0
         self.student_count = self.df.shape[0]
@@ -36,9 +41,12 @@ class KTU2019Result(object):
                     continue
                 if not col in self.fail_count.keys():
                     self.fail_count[col] = 0
+                    self.pass_count[col] = 0
                 if tag in self.fail_tags:
                     allpass = 0
                     self.fail_count[col] += 1
+                elif tag in self.pass_tags:
+                    self.pass_count[col] += 1
                 elif tag not in self.pass_tags:
                     unknown_tags.append(tag)
             if allpass == 1:
@@ -52,9 +60,9 @@ class KTU2019Result(object):
         for subject in self.fail_count.keys():
             if codes != None:
                 if subject in codes.split(','):
-                    print(self.ofmt.format(subject, self.fail_count[subject], self.student_count-self.fail_count[subject], round((1-self.fail_count[subject]/self.student_count)*100)))
+                    print(self.ofmt.format(subject, self.fail_count[subject], self.pass_count[subject], round((self.pass_count[subject]/(self.pass_count[subject] + self.fail_count[subject]))*100)))
             else:
-                print(self.ofmt.format(subject, self.fail_count[subject], self.student_count-self.fail_count[subject], round((1-self.fail_count[subject]/self.student_count)*100)))    
+                print(self.ofmt.format(subject, self.fail_count[subject], self.pass_count[subject], round((self.pass_count[subject]/(self.pass_count[subject] + self.fail_count[subject]))*100)))    
     def analyse_sgpa_cgpa(self):
         self.sgpa = pd.DataFrame(data = self.df.loc[:,'Student'], columns =['Student','Score'])
         self.sgpa['Score'] = self.df.loc[:,'SGPA']
@@ -104,9 +112,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Do result analysis on file obtained from KTU login")
     parser.add_argument("xls", help=".xls file containing grades; downloaded from KTU site")
     parser.add_argument("-c", "--codes", default=None, help="the comma separated list of subject codes you want at output. Omitting this argument will print only subjects where there are atleast 1 student have pass/fail grade")
+    parser.add_argument("-s", "--scheme", default=2019, help="KTU batch scheme 2015/2019")
     args = parser.parse_args()
 
-    result = KTU2019Result(args.xls)
+    result = KTU2019Result(args.xls, args.scheme)
     result.analyse_pass_fail()
     result.print_pass_fail(args.codes)
     result.analyse_sgpa_cgpa()
