@@ -17,15 +17,20 @@ import pandas as pd
 import argparse
 
 class KTU2019Result(object):
-    def __init__(self, xls, scheme=2019):
+    def __init__(self, xls, ofmt, scheme=2019):
         self.df = pd.read_excel(args.xls, header=1)
         if scheme == '2015':
         	self.fail_tags = ['F', 'FE', 'I', 'AB', 'W/D']
         	self.pass_tags = ['O', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'P']
         else: #2019 Scheme
-        	self.fail_tags = ['F', 'FA', 'FS', 'I', 'AB', 'W/D']
+        	self.fail_tags = ['F', 'FE', 'FA', 'FS', 'I', 'AB', 'W/D']
         	self.pass_tags = ['S', 'A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'P']
-        self.ofmt="{0:<10}{1:>10}{2:>10}{3:>10}"
+        if ofmt == 'csv':
+        	self.ofmt="{0},{1},{2},{3}"
+        	self.sfmt='{0},{1}'
+        else:
+        	self.ofmt="{0:<10}{1:>10}{2:>10}{3:>10}"
+        	self.sfmt='{0:<30}{1:>10}'
         self.fail_count = {} #Subject wise fail counts
         self.pass_count = {} #Subject wise pass counts
         self.cols = self.df.columns
@@ -54,8 +59,8 @@ class KTU2019Result(object):
             if len(unknown_tags) > 0:
                 print('Following unknown tags encountered:', unknown_tags)
     def print_pass_fail(self, codes):
-        print("Total Students:", self.student_count)
-        print("All pass:" , self.allpass_count)
+        print(self.sfmt.format("Total Students:", self.student_count))
+        print(self.sfmt.format("All pass:" , self.allpass_count))
         print(self.ofmt.format("Code","#fail", "#pass", "%pass"))
         for subject in self.fail_count.keys():
             if codes != None:
@@ -71,51 +76,50 @@ class KTU2019Result(object):
         self.cgpa['Score'] = self.df.loc[:,'CGPA']
         self.cgpa.sort_values('Score',ascending=False, inplace=True, ignore_index=True)
     def print_sgpa_cgpa(self):
-        sfmt='{0:<30}{1:>10}'
-        
         print()
         print('SGPA toppers')
-        print(sfmt.format('Name', 'SGPA'))
+        print(self.sfmt.format('Name', 'SGPA'))
         for i in range(5):
             ktuid,name = self.sgpa.loc[i,'Student'].split('-')
-            print(sfmt.format(name, self.sgpa.loc[i,'Score']))
+            print(self.sfmt.format(name, self.sgpa.loc[i,'Score']))
         
         print()
         print('CGPA toppers')
-        print(sfmt.format('Name', 'CGPA'))
+        print(self.sfmt.format('Name', 'CGPA'))
         for i in range(5):
             ktuid,name = self.cgpa.loc[i,'Student'].split('-')
-            print(sfmt.format(name, self.cgpa.loc[i,'Score']))
+            print(self.sfmt.format(name, self.cgpa.loc[i,'Score']))
             
         print()
         print('SGPA Analysis')
-        print(sfmt.format('SGPA Range', '#students'))
-        print(sfmt.format('SGPA==10', result.sgpa[result.sgpa.Score == 10].shape[0]))
+        print(self.sfmt.format('SGPA Range', '#students'))
+        print(self.sfmt.format('SGPA==10', result.sgpa[result.sgpa.Score == 10].shape[0]))
         gpa_bucket = [10, 9, 8, 7, 6, 5, 4, 0]
         for i in range(len(gpa_bucket)-1):
             ub = gpa_bucket[i]    #upper bound
             lb = gpa_bucket[i+1] #lower bound
-            print(sfmt.format('SGPA <'+ str(ub)+' & >=' + str(lb), result.sgpa[(result.sgpa.Score < ub) & (result.sgpa.Score >= lb)].shape[0]))
+            print(self.sfmt.format('SGPA <'+ str(ub)+' & >=' + str(lb), result.sgpa[(result.sgpa.Score < ub) & (result.sgpa.Score >= lb)].shape[0]))
         
         print()
         print('CGPA Analysis')
-        print(sfmt.format('CGPA Range', '#students'))
-        print(sfmt.format('CGPA==10', result.cgpa[result.cgpa.Score == 10].shape[0]))
+        print(self.sfmt.format('CGPA Range', '#students'))
+        print(self.sfmt.format('CGPA==10', result.cgpa[result.cgpa.Score == 10].shape[0]))
         gpa_bucket = [10, 9, 8, 7, 6, 5, 4, 0]
         for i in range(len(gpa_bucket)-1):
             ub = gpa_bucket[i]    #upper bound
             lb = gpa_bucket[i+1] #lower bound
-            print(sfmt.format('CGPA <'+ str(ub)+' & >=' + str(lb), result.cgpa[(result.cgpa.Score < ub) & (result.cgpa.Score >= lb)].shape[0]))
+            print(self.sfmt.format('CGPA <'+ str(ub)+' & >=' + str(lb), result.cgpa[(result.cgpa.Score < ub) & (result.cgpa.Score >= lb)].shape[0]))
         
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = "Do result analysis on file obtained from KTU login")
     parser.add_argument("xls", help=".xls file containing grades; downloaded from KTU site")
     parser.add_argument("-c", "--codes", default=None, help="the comma separated list of subject codes you want at output. Omitting this argument will print only subjects where there are atleast 1 student have pass/fail grade")
-    parser.add_argument("-s", "--scheme", default=2019, help="KTU batch scheme 2015/2019")
+    parser.add_argument("-s", "--scheme", default=2019, help="KTU batch scheme [2019|2015]")
+    parser.add_argument("-o", "--output", default="pretty", help="Output: [pretty|csv]")
     args = parser.parse_args()
 
-    result = KTU2019Result(args.xls, args.scheme)
+    result = KTU2019Result(args.xls, args.output, args.scheme)
     result.analyse_pass_fail()
     result.print_pass_fail(args.codes)
     result.analyse_sgpa_cgpa()
